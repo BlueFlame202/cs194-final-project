@@ -80,10 +80,19 @@ def leiden_silhouette(adata, latent_key, resolutions, prefix):
     return scores
 
 # Gene latent
-gene_resolutions = [0.2, 0.4, 0.6, 0.8, 1.0]
-gene_sils = leiden_silhouette(genes_combined, "X_scVI", gene_resolutions, "gene_scVI")
+resolutions = [0.2, 0.4, 0.6, 0.8, 1.0]
+gene_sils = leiden_silhouette(genes_combined, "X_scVI", resolutions, "gene_scVI")
 
 # scANVI latent
-scanvi_resolutions = [0.2, 0.4, 0.6, 0.8, 1.0]
-scanvi_sils = leiden_silhouette(genes_combined, "X_scANVI", scanvi_resolutions, "scanvi")
+gene_scanvi_sils = leiden_silhouette(genes_combined, "X_scANVI", resolutions, "gene_scanvi")
 # end ChatGPT
+
+# Isoform latent
+isoform_sils = leiden_silhouette(isoforms_combined, "X_scVI", resolutions, "isoform_scVI")
+
+# scANVI latent
+if "X_scANVI" in isoforms_combined.obsm:
+    isoform_scanvi_sils = leiden_silhouette(isoforms_combined, "X_scANVI", resolutions, "isoform_scanvi")
+else:
+    isoform_scanvi_sils = None
+    print("Warning: X_scANVI not found in isoforms_combined.obsm, skipping isoform_scanvi silhouette analysis.")

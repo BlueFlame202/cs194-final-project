@@ -94,13 +94,13 @@ sc.pp.filter_genes(genes_combined, min_cells=3)
 # HVGs
 print("Selecting highly variable genes (HVGs)...")
 genes_combined.layers["counts"] = genes_combined.X
-# sc.pp.highly_variable_genes( # ask alex and carmelle about this one
-#     genes_combined, 
-#     layer="counts",
-#     flavor="seurat_v3",
-#     n_top_genes=3000,
-#     subset=True
-# )
+sc.pp.highly_variable_genes( # ask alex and carmelle about this one
+    genes_combined, 
+    layer="counts",
+    flavor="seurat_v3",
+    n_top_genes=3000,
+    subset=True
+)
 
 # ------------------------------
 # SCVI/SCANVI training

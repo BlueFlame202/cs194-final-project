@@ -40,7 +40,7 @@ RESULTS_DIR = AATH_LAMBDA_RESULTS_DIR
 
 EXP_NAME = "sc_sn_isoform_integration_longbench"
 EXP_RESULTS_DIR = os.path.join(RESULTS_DIR, EXP_NAME)
-EXP_PROC_DATA_DIR = os.path.join(DATA_DIR, "/processed/" + EXP_NAME)
+EXP_PROC_DATA_DIR = DATA_DIR + "/processed/" + EXP_NAME
 os.makedirs(EXP_RESULTS_DIR, exist_ok=True)
 os.makedirs(EXP_PROC_DATA_DIR, exist_ok=True)
 ################################################################

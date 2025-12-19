@@ -40,7 +40,7 @@ genes_combined = sc.read_h5ad(longbench_gene_integrated)
 isoforms_combined = sc.read_h5ad(longbench_isoform_integrated)
 
 # begin ChatGPT
-def leiden_silhouette(adata, latent_key, resolutions, prefix):
+def leiden_silhouette(adata, latent_key, resolutions, prefix, plot_clusters_umap=None):
     """
     Run neighbors+Leiden at each resolution on adata using latent_key,
     compute silhouette scores, and save results to adata.obs.
@@ -67,6 +67,58 @@ def leiden_silhouette(adata, latent_key, resolutions, prefix):
         scores.append(sil)
         print(f"{latent_key} @ res={res:.2f}: silhouette={sil:.3f}")
 
+    # begin Cursor AI
+    if plot_clusters_umap:
+        # Define UMAP key for this latent space
+        umap_key = f"{latent_key}_umap"
+        # construct 2x3 grid
+        fig, axs = plt.subplots(2, 3, figsize=(16, 10))
+        axs = axs.flatten()
+        n = len(resolutions)
+        for i, res in enumerate(resolutions):
+            leiden_key = f"{prefix}_leiden_res_{res:.2f}"
+            # compute UMAP if not already present for this latent space
+            if umap_key not in adata.obsm:
+                sc.tl.umap(
+                    adata, 
+                    min_dist=0.3, 
+                    spread=1.0, 
+                    random_state=123, 
+                    key_added=umap_key, 
+                    neighbors_key=None
+                )
+            umap_coords = adata.obsm[umap_key]
+            labels = adata.obs[leiden_key].astype(str)
+
+            # Pick a colormap with enough distinguishable colors, or fallback
+            unique_labels = sorted(labels.unique())
+            n_clusters = len(unique_labels)
+            cmap = plt.get_cmap('tab20' if n_clusters <= 20 else 'tab20b')
+
+            for idx, group in enumerate(unique_labels):
+                group_mask = labels == group
+                axs[i].scatter(
+                    umap_coords[group_mask, 0],
+                    umap_coords[group_mask, 1],
+                    label=f'Cluster {group}',
+                    alpha=0.7,
+                    s=8,
+                    color=cmap(idx % cmap.N)
+                )
+            axs[i].set_title(f"Leiden (res={res:.2f})")
+            axs[i].set_xlabel("UMAP1")
+            axs[i].set_ylabel("UMAP2")
+            axs[i].legend(markerscale=2, fontsize=8, loc='best', frameon=False)
+
+        # Remove unused subplots if any
+        for j in range(n, 6):
+            fig.delaxes(axs[j])
+
+        fig.suptitle(f"{prefix}: UMAP colored by Leiden clusters", fontsize=16)
+        plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+        plt.savefig(f"{EXP_RESULTS_DIR}/{prefix}_leiden_umap_grid.png")
+        plt.close()
+
     # plot silhouette scores
     plt.figure(figsize=(5,4))
     plt.plot(resolutions, scores, marker="o")
@@ -79,20 +131,43 @@ def leiden_silhouette(adata, latent_key, resolutions, prefix):
 
     return scores
 
+# Generate UMAP embeddings for genes_combined and isoforms_combined using X_scVI and X_scANVI latent spaces
+
+# For gene-level data
+if "X_scVI" in genes_combined.obsm:
+    print("Computing UMAP for genes_combined (X_scVI)...")
+    sc.pp.neighbors(genes_combined, use_rep="X_scVI")
+    sc.tl.umap(genes_combined, key_added="X_scVI_umap")
+if "X_scANVI" in genes_combined.obsm:
+    print("Computing UMAP for genes_combined (X_scANVI)...")
+    sc.pp.neighbors(genes_combined, use_rep="X_scANVI")
+    sc.tl.umap(genes_combined, key_added="X_scANVI_umap", neighbors_key=None)
+
+# For isoform-level data
+if "X_scVI" in isoforms_combined.obsm:
+    print("Computing UMAP for isoforms_combined (X_scVI)...")
+    sc.pp.neighbors(isoforms_combined, use_rep="X_scVI")
+    sc.tl.umap(isoforms_combined, key_added="X_scVI_umap")
+if "X_scANVI" in isoforms_combined.obsm:
+    print("Computing UMAP for isoforms_combined (X_scANVI)...")
+    sc.pp.neighbors(isoforms_combined, use_rep="X_scANVI")
+    sc.tl.umap(isoforms_combined, key_added="X_scANVI_umap", neighbors_key=None)
+
+
 # Gene latent
-resolutions = [0.2, 0.4, 0.6, 0.8, 1.0]
-gene_sils = leiden_silhouette(genes_combined, "X_scVI", resolutions, "gene_scVI")
+resolutions = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+gene_sils = leiden_silhouette(genes_combined, "X_scVI", resolutions, "gene_scVI", plot_clusters_umap=True)
 
 # scANVI latent
-gene_scanvi_sils = leiden_silhouette(genes_combined, "X_scANVI", resolutions, "gene_scanvi")
+gene_scanvi_sils = leiden_silhouette(genes_combined, "X_scANVI", resolutions, "gene_scanvi", plot_clusters_umap=True)
 # end ChatGPT
 
 # Isoform latent
-isoform_sils = leiden_silhouette(isoforms_combined, "X_scVI", resolutions, "isoform_scVI")
+isoform_sils = leiden_silhouette(isoforms_combined, "X_scVI", resolutions, "isoform_scVI", plot_clusters_umap=True)
 
 # scANVI latent
 if "X_scANVI" in isoforms_combined.obsm:
-    isoform_scanvi_sils = leiden_silhouette(isoforms_combined, "X_scANVI", resolutions, "isoform_scanvi")
+    isoform_scanvi_sils = leiden_silhouette(isoforms_combined, "X_scANVI", resolutions, "isoform_scanvi", plot_clusters_umap=True)
 else:
     isoform_scanvi_sils = None
     print("Warning: X_scANVI not found in isoforms_combined.obsm, skipping isoform_scanvi silhouette analysis.")

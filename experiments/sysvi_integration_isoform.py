@@ -38,9 +38,9 @@ AATH_RESULTS_DIR = "/Users/aathreyakadambi/Documents/school/berkeley/fa25/cs194/
 AATH_LAMBDA_RESULTS_DIR = "/home/ubuntu/workspace/results"
 RESULTS_DIR = AATH_LAMBDA_RESULTS_DIR
 
-EXP_NAME = "sc_sn_isoform_integration_longbench"
+EXP_NAME = "sysvi_sc_sn_isoform_integration_longbench"
 EXP_RESULTS_DIR = os.path.join(RESULTS_DIR, EXP_NAME)
-EXP_PROC_DATA_DIR = os.path.join(DATA_DIR, "/processed/" + EXP_NAME)
+EXP_PROC_DATA_DIR = DATA_DIR + "/processed/" + EXP_NAME
 os.makedirs(EXP_RESULTS_DIR, exist_ok=True)
 os.makedirs(EXP_PROC_DATA_DIR, exist_ok=True)
 ################################################################
@@ -127,78 +127,45 @@ sc.pp.highly_variable_genes(
 )
 
 # ------------------------------
-# SCVI/SCANVI training
+# SYSVI training
 # ------------------------------
-print("Setting up AnnData for SCVI/SCANVI...")
-scvi.model.SCVI.setup_anndata(
+print("Setting up AnnData for SysVI...")
+scvi.external.SysVI.setup_anndata(
     isoforms_combined,
     layer="counts",
-    batch_key="batch"
+    batch_key="batch",
+    # labels_key="cell_line"  # optional, can handle unknown labels
 )
 
-# Train scVI
-print("Training SCVI model...")
-vae = scvi.model.SCVI(isoforms_combined, n_layers=2, n_latent=20)
-vae.train(max_epochs=250, accelerator="gpu")
-history_vae = vae.history
+print("Training SysVI model...")
+sysvi_model = scvi.external.SysVI(
+    isoforms_combined
+)
+sysvi_model.train(max_epochs=250, accelerator="gpu")
+history_sysvi = sysvi_model.history
 
-# Plot and save scVI training loss
-scvi_loss_plot_path = os.path.join(EXP_RESULTS_DIR, "scvi_training_loss.png")
+# Plot SysVI training loss
+sysvi_loss_plot_path = os.path.join(EXP_RESULTS_DIR, "sysvi_training_loss.png")
 plt.figure(figsize=(6,4))
-plt.plot(history_vae["elbo_train"], label="train ELBO")
-if "elbo_validation" in history_vae:
-    plt.plot(history_vae["elbo_validation"], label="validation ELBO")
+plt.plot(history_sysvi["elbo_train"], label="train ELBO")
+if "elbo_validation" in history_sysvi:
+    plt.plot(history_sysvi["elbo_validation"], label="validation ELBO")
 plt.xlabel("Epoch")
 plt.ylabel("ELBO")
-plt.title("scVI training loss")
+plt.title("SysVI training loss")
 plt.legend()
 plt.tight_layout()
-plt.savefig(scvi_loss_plot_path)
+plt.savefig(sysvi_loss_plot_path)
 plt.close()
 
-# Save scVI latent representation
-print("Extracting SCVI latent representation...")
-latent_scvi = vae.get_latent_representation()
-isoforms_combined.obsm["X_scVI"] = latent_scvi  # save scVI embedding
-
-# Train scANVI with error handling
-try:
-    print("Training SCANVI model...")
-    scanvi = scvi.model.SCANVI.from_scvi_model(
-        vae,
-        unlabeled_category="Unknown",
-        labels_key="cell_line" # use as noisy proxy for cell type
-    )
-    scanvi.train(max_epochs=250, accelerator="gpu")
-    history_scanvi = scanvi.history
-
-    # Plot and save scANVI training loss
-    scanvi_loss_plot_path = os.path.join(EXP_RESULTS_DIR, "scanvi_training_loss.png")
-    plt.figure(figsize=(6,4))
-    plt.plot(history_scanvi["elbo_train"], label="train ELBO")
-    if "elbo_validation" in history_scanvi:
-        plt.plot(history_scanvi["elbo_validation"], label="validation ELBO")
-    plt.xlabel("Epoch")
-    plt.ylabel("ELBO")
-    plt.title("scANVI training loss")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(scanvi_loss_plot_path)
-    plt.close()
-
-    # Save scANVI latent representation
-    print("Extracting SCANVI latent representation...")
-    latent_scanvi = scanvi.get_latent_representation()
-    isoforms_combined.obsm["X_scANVI"] = latent_scanvi
-
-except Exception as e:
-    print("Warning: SCANVI training failed.")
-    print(e)
-    print("Proceeding with scVI latent space only.")
+# Extract latent representation
+print("Extracting SysVI latent representation...")
+latent_sysvi = sysvi_model.get_latent_representation()
+isoforms_combined.obsm["X_sysVI"] = latent_sysvi
 
 # ------------------------------
 # Save integrated AnnData
 # ------------------------------
-output_path = f"{EXP_PROC_DATA_DIR}/post_scvi_scanvi_integrated.h5ad"
+output_path = f"{EXP_PROC_DATA_DIR}/post_sysvi_integrated.h5ad"
 print(f"Writing integrated AnnData to {output_path}")
 isoforms_combined.write_h5ad(output_path)

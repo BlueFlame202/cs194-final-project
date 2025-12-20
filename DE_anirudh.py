@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 #DE - anirudh
 #load
-adata_gene = sc.read_h5ad("Desktop/fa25/classes/cs194/post_scvi_scanvi_integrated_gene.h5ad")
-adata = sc.read_h5ad("Desktop/fa25/classes/cs194/post_scvi_scanvi_integrated_isoform.h5ad")
+adata_gene = sc.read_h5ad("post_scvi_scanvi_integrated_gene.h5ad")
+adata = sc.read_h5ad("post_scvi_scanvi_integrated_isoform.h5ad")
 #leiden clustering from aathreya
 sc.pp.neighbors(adata, use_rep="X_scVI")
 sc.tl.umap(adata, key_added="X_scVI_umap")

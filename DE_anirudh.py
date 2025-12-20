@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 #DE - anirudh
 #load
-adata_gene = sc.read_h5ad("post_scvi_scanvi_integrated_gene.h5ad")
-adata = sc.read_h5ad("post_scvi_scanvi_integrated_isoform.h5ad")
+adata_gene = sc.read_h5ad("Desktop/fa25/classes/cs194/post_scvi_scanvi_integrated_gene.h5ad")
+adata = sc.read_h5ad("Desktop/fa25/classes/cs194/post_scvi_scanvi_integrated_isoform.h5ad")
 #leiden clustering from aathreya
 sc.pp.neighbors(adata, use_rep="X_scVI")
 sc.tl.umap(adata, key_added="X_scVI_umap")
@@ -17,7 +17,7 @@ adata_sub = adata[h1975_nuclei].copy()
 sc.tl.rank_genes_groups(
     adata_sub,
     groupby='scvi_leiden_class',
-    groups=['3'],     
+    groups=['3' and '5'],     
     method='wilcoxon',
     use_raw=False,    
     layer='counts',   
@@ -25,7 +25,7 @@ sc.tl.rank_genes_groups(
 )
 
 
-de_iso = sc.get.rank_genes_groups_df(adata_sub, group='3')
+de_iso = sc.get.rank_genes_groups_df(adata_sub, group='3' and '5')
 sig = (de_iso["pvals_adj"] < 0.05) & (np.abs(de_iso["logfoldchanges"]) > 0.25)
 
 # subset to sig hits

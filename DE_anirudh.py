@@ -9,10 +9,12 @@ adata = sc.read_h5ad("post_scvi_scanvi_integrated_isoform.h5ad")
 sc.pp.neighbors(adata, use_rep="X_scVI")
 sc.tl.umap(adata, key_added="X_scVI_umap")
 sc.tl.leiden(adata, resolution=0.6, key_added="scvi_leiden_class")
-
+print(adata)
 h1975_nuclei = (adata.obs['scvi_leiden_class'].isin(['3', '5'])) & (adata.obs['dataset'].str.contains('nuclei', case=False, na=False))
 
 adata_sub = adata[h1975_nuclei].copy()
+#sc.pp.normalize_total(adata_sub, target_sum=1e4)
+sc.pp.log1p(adata_sub)
 
 sc.tl.rank_genes_groups(
     adata_sub,

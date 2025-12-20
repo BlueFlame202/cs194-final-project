@@ -1,10 +1,25 @@
 import scanpy as sc
 import matplotlib.pyplot as plt
 import numpy as np
+
+################################################################
+# DATA
+# data source: # https://www.biorxiv.org/content/10.1101/2025.09.11.675724v1.full - PacBio long reads
+# files paths 
+CARMELLE_DATA_DIR = "/mnt/lareaulab/carmelle/longread_sc/lung"
+AATH_DATA_DIR = "/Users/aathreyakadambi/Documents/school/berkeley/fa25/cs194/final_project/data"
+AATH_LAMBDA_DATA_DIR = "/home/ubuntu/workspace/data"
+DATA_DIR = AATH_LAMBDA_DATA_DIR # EDIT THIS
+
+longbench_gene_integrated = f"{DATA_DIR}/processed/sc_sn_gene_integration_longbench/post_scvi_scanvi_integrated_gene.h5ad"
+longbench_isoform_integrated = f"{DATA_DIR}/processed/sc_sn_gene_integration_longbench/post_scvi_scanvi_integrated_isoform.h5ad"
+################################################################
+
 #DE - anirudh
 #load
-adata_gene = sc.read_h5ad("post_scvi_scanvi_integrated_gene.h5ad")
-adata = sc.read_h5ad("post_scvi_scanvi_integrated_isoform.h5ad")
+adata_gene = sc.read_h5ad(longbench_gene_integrated)
+adata = sc.read_h5ad(longbench_isoform_integrated)
+
 #leiden clustering from aathreya
 sc.pp.neighbors(adata, use_rep="X_scVI")
 sc.tl.umap(adata, key_added="X_scVI_umap")

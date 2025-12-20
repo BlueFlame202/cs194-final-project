@@ -11,3 +11,7 @@ Code for reproducing the single nuclei and single cell batches is in the `experi
 ### CRC Dataset
 
 Analysis and visualization of the CRC dataset is done in `notebooks/crc_isoform_clusters_analysis.ipynb`.
+
+## Reproducibility
+
+For reproducibility, an `environment.yml` file is included which should be compatible with versions of Conda or Mamba. Additionally, files contain `DATA_DIR` and `RESULTS_DIR` paths which can be adjusted to match the users' personal directory structure.
